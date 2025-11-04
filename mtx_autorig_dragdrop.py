@@ -10,12 +10,12 @@
 # ============================================================
 
 import maya.cmds as cmds # type: ignore
-import maya.mel as mel  # type: ignore
 import sys
 import os
 
-def main():
 
+def main():
+    """Main logic to launch Matrix AutoRig UI."""
     this_file = os.path.realpath(__file__)
     this_dir = os.path.dirname(this_file)
 
@@ -24,27 +24,24 @@ def main():
         print(f"[MatrixAutoRig] Added to sys.path: {this_dir}")
 
     try:
-        from matrixAutorig import UI as ui_mod
-        ui = ui_mod.MatrixAutoRigUI()
+        # Import the UI module
+        from matrixAutorig.UI import MatrixAutoRigUI
+
+        # Create and show the window
+        ui = MatrixAutoRigUI()
         ui.create_window()
-    except Exception:
-        try:
-            import importlib.util
-            ui_path = os.path.join(this_dir, "matrixAutorig", "UI.py")
-            if os.path.exists(ui_path):
-                spec = importlib.util.spec_from_file_location("matrixAutorig.UI", ui_path)
-                ui_mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(ui_mod)
-                ui = ui_mod.MatrixAutoRigUI()
-                ui.create_window()
-                print(f"[MatrixAutoRig] UI launched from {ui_path}")
-            else:
-                raise ImportError("UI.py not found at " + ui_path)
-        except Exception as e:
-            cmds.warning(f"MatrixAutoRig error: {e}")
+
+        print("[MatrixAutoRig] Successfully launched UI!")
+    except ImportError as e:
+        cmds.warning(f"[MatrixAutoRig] ImportError: {e}")
+    except Exception as e:
+        cmds.warning(f"[MatrixAutoRig] Error: {e}")
+
 
 # ------------------------------------------------------------
-# DRAG & DROP ENTRY POINT
+# REQUIRED ENTRY POINT FOR MAYA DRAG & DROP
 # ------------------------------------------------------------
-if __name__ == "__main__":
+def onMayaDroppedPythonFile(*args):
+    """Called automatically when this .py file is dropped into Maya."""
     main()
+
