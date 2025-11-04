@@ -31,15 +31,10 @@ This work is based of the incredible teaching of Jean-Paul Tossings over at http
 1. Clone or download this repository:
 
    ```bash
-   git clone https://github.com/yourusername/matrix-autorig.git
+   git clone https://github.com/MarcadrienLePape/maya-matrix-autorig.git
    ```
 2. Add the folder to your Maya scripts path.
-3. In Maya’s Script Editor, load the main tool:
-
-   ```python
-   import matrix_autorig
-   matrix_autorig.launch()
-   ```
+3. In Maya’s Script Editor, drag and drop : mtx_autorig_dragdrop
 
 ---
 
