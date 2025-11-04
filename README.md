@@ -2,7 +2,7 @@
 
 **Matrix AutoRig** is an open-source autorigging framework for Autodesk Maya, designed for artists and TDs who want a fast, modular, and easily extendable rigging pipeline.
 Built with flexibility in mind, this tool leverages Maya’s matrix-based transformations to create lightweight, efficient rigs without unnecessary constraints.
-This work is based of the incredible teaching of Jean-Paul Tossings oover at https://polderanimation.com/.
+This work is based of the incredible teaching of Jean-Paul Tossings over at https://polderanimation.com/ or his [Youtube Channel](https://www.youtube.com/@JeanPaulTossings)
 
 **This uses only matrix nodes, no constraints only pure mathimatical calculations for a fast autorig!*
 
