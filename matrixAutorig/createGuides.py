@@ -1,12 +1,8 @@
-import maya.cmds as cmds
-from matrixAutorig.naming import LEFT, RIGHT, GUIDE, JAW, ROOT, SPINE, ARM, SHOULDER, ELBOW, HAND  # Add any other needed constants
+import maya.cmds as cmds # type: ignore
+from matrixAutorig.naming import MATRIX, MULTIPLY_MATRIX, INVERSE_MATRIX, DECOMPOSE_MATRIX, AIM_MATRIX, WORLD_MATRIX, PARENT_OFFSET_MATRIX, LOCAL_OFFSET_MATRIX, JOINT, GUIDE, CONTROLLER, IK, FK, DISTANCEBETWEEN, SUM, MULTIPLY, MULTIPLYDIVIDE, GROUP, ARM, SHOULDER, ELBOW, HAND, LEG, KNEE, ANKLE, FOOT, BALL, TOE, SPINE, ROOT, CLAVICLE, HEAD, NECK, EYE, JAW, LEFT, RIGHT, CENTER
 
 def create_guides(num_spine=3, num_arms=1):
-    """
-    Create root, spine, and arm guides.
-    :param num_spine: Number of spine controls (locators)
-    :param num_arms: Number of arms per side
-    """
+
     # Create root locator
     root = cmds.spaceLocator(name="{}_{}".format(ROOT, GUIDE))[0]
     cmds.setAttr("{}.translateY".format(root), 1)
