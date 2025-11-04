@@ -1,3 +1,5 @@
+# CURRENTLY IN DEV
+
 # Matrix AutoRig for Maya
 
 **Matrix AutoRig** is an open-source autorigging framework for Autodesk Maya, designed for artists and TDs who want a fast, modular, and easily extendable rigging pipeline.
