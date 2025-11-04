@@ -318,8 +318,14 @@ class MatrixAutoRigUI:
             label="Multiply Divide",
             text="MultDiv",
             parent=custom_column
-        )        
+        )  
 
+        self.grp_field = cmds.textFieldGrp(
+            label="Group",
+            text="Grp",
+            parent=custom_column
+        )
+        
         # Part constants fields
         self.arm_field_custom = cmds.textFieldGrp(
             label="Arm",
