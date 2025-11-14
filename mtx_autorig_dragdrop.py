@@ -15,7 +15,6 @@ import os
 
 
 def main():
-    """Main logic to launch Matrix AutoRig UI."""
     this_file = os.path.realpath(__file__)
     this_dir = os.path.dirname(this_file)
 
@@ -25,11 +24,10 @@ def main():
 
     try:
         # Import the UI module
-        from matrixAutorig.UI import MatrixAutoRigUI
+        from matrixAutorig.UI import UI
 
         # Create and show the window
-        ui = MatrixAutoRigUI()
-        ui.create_window()
+        ui = main()
 
         print("[MatrixAutoRig] Successfully launched UI!")
     except ImportError as e:
@@ -42,6 +40,5 @@ def main():
 # REQUIRED ENTRY POINT FOR MAYA DRAG & DROP
 # ------------------------------------------------------------
 def onMayaDroppedPythonFile(*args):
-    """Called automatically when this .py file is dropped into Maya."""
     main()
 
