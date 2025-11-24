@@ -8,18 +8,21 @@
 #################################################
 
 import maya.cmds as cmds # type: ignore
-import pymel.core as pm # type: ignore
-import maya.mel as mel # type: ignore
-
 from functools import partial
 
 #-------------------------------------------------------------------------------------------------------------------------
 # Create Guides #
 
-num_spine = UI.spine_field
-num_arms = UI.arm_field
+def create_guides(*args):
+    try:
+        num_spine = cmds.intFieldGrp(spine_field, q=True, value1=True)
+    except Exception:
+        num_spine = 3
 
-def create_guides(num_spine, num_arms):
+    try:
+        num_arms = cmds.intFieldGrp(arm_field, q=True, value1=True)
+    except Exception:
+        num_arms = 1
 
     constants = get_naming_constants()
     ROOT = constants["ROOT"]
@@ -30,21 +33,27 @@ def create_guides(num_spine, num_arms):
     ARM = constants["ARM"]
     SHOULDER = constants["SHOULDER"]
     ELBOW = constants["ELBOW"]
+    
     HAND = constants["HAND"]
+    THUMB = constants["THUMB"]
+    INDEX = constants["INDEX"]
+    MIDDLE = constants["MIDDLE"]
+    RING = constants["RING"]
+    PINKY = constants["PINKY"]
+    METACARPUS = constants["METACARPUS"]
+    
     LEG = constants["LEG"]
 
     # Create root locator
     root = cmds.spaceLocator(name="{}_{}".format(ROOT, GUIDE))[0]
-    cmds.setAttr("{}.translateY".format(root), 1)
-
-    cmds.parent(root, )
+    cmds.setAttr("{}.translateY".format(root), 5)
 
     # Create spine locators
     spine_guides = []
 
     for i in range(num_spine):
         loc = cmds.spaceLocator(name="{}_{}_{}".format(SPINE, i+1, GUIDE))[0]
-        cmds.setAttr("{}.translateY".format(loc), 2 + i)
+        cmds.setAttr("{}.translateY".format(loc), 5 + i*2.5)
         spine_guides.append(loc)
         if i == 0:
             cmds.parent(loc, root)
@@ -58,33 +67,79 @@ def create_guides(num_spine, num_arms):
             shoulder = cmds.spaceLocator(
                 name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, SHOULDER, GUIDE)
             )[0]
-            cmds.setAttr("{}.translateY".format(shoulder), 2 + num_spine - 1)
-            offset = 1.5 + arm_idx * 1.5
-            cmds.setAttr("{}.translateX".format(shoulder), offset if side == LEFT else -offset)
             cmds.parent(shoulder, spine_guides[-1])
+            cmds.setAttr("{}.translateY".format(shoulder), 0 - num_arms)
+            cmds.setAttr("{}.translateX".format(shoulder), 1.5 if side == LEFT else -1.5)
 
             # Elbow
             elbow = cmds.spaceLocator(
                 name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, ELBOW, GUIDE)
             )[0]
-            cmds.setAttr("{}.translateY".format(elbow), 2 + num_spine - 1)
-            cmds.setAttr("{}.translateX".format(elbow), (offset + 1.5) if side == LEFT else -(offset + 1.5))
-            cmds.setAttr("{}.translateZ".format(elbow), 1)
             cmds.parent(elbow, shoulder)
+            cmds.setAttr("{}.translateY".format(elbow), 0)
+            cmds.setAttr("{}.translateX".format(elbow), 3 if side == LEFT else (-3))
+            cmds.setAttr("{}.translateZ".format(elbow), -2)
 
             # Hand
             hand = cmds.spaceLocator(
                 name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, GUIDE)
             )[0]
-            cmds.setAttr("{}.translateY".format(hand), 2 + num_spine - 1)
-            cmds.setAttr("{}.translateX".format(hand), (offset + 3) if side == LEFT else -(offset + 3))
-            cmds.setAttr("{}.translateZ".format(hand), 2)
             cmds.parent(hand, elbow)
+            cmds.setAttr("{}.translateY".format(hand), 0)
+            cmds.setAttr("{}.translateX".format(hand), 3 if side == LEFT else (-3))
+            cmds.setAttr("{}.translateZ".format(hand), 2)
+            
+            # Fingers
+            for fingers in [INDEX, MIDDLE, RING, PINKY]:
+                meta = cmds.spaceLocator(
+                    name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, fingers, METACARPUS, GUIDE))[0]
+                cmds.parent(meta, hand)
+                cmds.setAttr("{}.translateY".format(meta), 0)
+                cmds.setAttr("{}.translateX".format(meta), 0.5 if side == LEFT else -0.5)
+                if fingers == INDEX:
+                    cmds.setAttr("{}.translateZ".format(meta), 1)
+                elif fingers == MIDDLE:
+                    cmds.setAttr("{}.translateZ".format(meta), 0)
+                elif fingers == RING:
+                    cmds.setAttr("{}.translateZ".format(meta), -1)
+                else:
+                    cmds.setAttr("{}.translateZ".format(meta), -2)
+                prev = meta
+                
+                for f in range(4):
+                    finger = cmds.spaceLocator(
+                        name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, fingers, f+1, GUIDE))[0]
+                    cmds.parent(finger, prev)
+                    cmds.setAttr("{}.translateY".format(finger), 0)
+                    cmds.setAttr("{}.translateX".format(finger), (0.5+f*0.3) if side == LEFT else -(0.5+f*0.3))
+                    cmds.setAttr("{}.translateZ".format(finger), 0)
+                    prev = finger
+
+            # Thumb
+            for thumb in range(1):
+                meta = cmds.spaceLocator(
+                        name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, THUMB, METACARPUS, GUIDE))[0]
+                cmds.parent(meta, hand)
+                cmds.setAttr("{}.translateX".format(meta), 0.3 if side == LEFT else -0.3)
+                cmds.setAttr("{}.translateY".format(meta), 0)
+                cmds.setAttr("{}.translateZ".format(meta), 2 if side == LEFT else -2)
+                prev = meta
+                
+                for t in range(3):
+                    thumb_loc = cmds.spaceLocator(
+                        name="{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, THUMB, t+1, GUIDE))[0]
+                    cmds.parent(thumb_loc, prev)
+                    cmds.setAttr("{}.translateY".format(thumb_loc), 0)
+                    cmds.setAttr("{}.translateX".format(thumb_loc), 0.5+t*0.3 if side == LEFT else -(0.5+t*0.3))
+                    cmds.setAttr("{}.translateZ".format(thumb_loc), 0)
+                    prev = thumb_loc
+                    
 
 #-------------------------------------------------------------------------------------------------------------------------
 # Create Rig
 
 def generate_rig(*args):
+    pass
 
 #---------------------------------------------------------------------------------------------------------
 # Utils
@@ -115,6 +170,8 @@ def hierarchy():
         grpJoints = cmds.createNode('transform', name="{}_joints".format(part), parent=grpMod)
         grpRigNodes = cmds.createNode('transform', name="{}_nodes".format(part), parent=grpMod)
         grpOutputs = cmds.createNode('transform', name="{}_output".format(part), parent=grpMod)
+        
+        createHierarchy = cmds.parent(grpOutputs + grpRigNodes + grpJoints + grpControls + grpGuides + grpInputs + grpSetup, grpMod)
 
 
 def addOffset(dst, suffix='Offset'):
@@ -133,10 +190,24 @@ def addOffset(dst, suffix='Offset'):
 # Naming Constants
 
 def get_naming_constants():
+    # Safely query UI widget values with sensible defaults so this function
+    # can be called even if some widgets aren't available yet.
+    try:
+        customNaming = cmds.radioButtonGrp(custom_naming, q=True, select=True)
+    except Exception:
+        # Default: custom naming off (2 = No in our UI setup)
+        customNaming = 2
+
+    try:
+        addCaps = cmds.radioButtonGrp(option_caps, q=True, select=True)
+    except Exception:
+        # Default: caps off (2 = No in our UI setup)
+        addCaps = 2
+
     constants = {}
 
-    if UI.custom_naming == 2:
-        if UI.addCapsName:
+    if customNaming == 2:
+        if addCaps == 1:
             # Object constants
             constants.update({
                 "MATRIX": "Mtx",
@@ -164,6 +235,12 @@ def get_naming_constants():
                 "SHOULDER": "Sh",
                 "ELBOW": "Elb",
                 "HAND": "Hand",
+                "THUMB": "Thumb",
+                "INDEX": "Index",
+                "MIDDLE": "Middle",
+                "RING": "Ring",
+                "PINKY": "Pinky",
+                "METACARPUS": "Metacarpus",
                 "LEG": "Leg",
                 "KNEE": "Knee",
                 "ANKLE": "Ankle",
@@ -214,6 +291,12 @@ def get_naming_constants():
                 "SHOULDER": "sh",
                 "ELBOW": "elb",
                 "HAND": "hand",
+                "THUMB": "thumb",
+                "INDEX": "index",
+                "MIDDLE": "middle",
+                "RING": "ring",
+                "PINKY": "pinky",
+                "METACARPUS": "metacarpus",
                 "LEG": "leg",
                 "KNEE": "knee",
                 "ANKLE": "ankle",
@@ -238,44 +321,50 @@ def get_naming_constants():
     else:
         # Custom naming constants from UI fields
         constants.update({
-            "MATRIX": UI.mtx_field,
-            "MULTIPLY_MATRIX": UI.mtx_mlt_field,
-            "INVERSE_MATRIX": UI.mtx_inv_field,
-            "DECOMPOSE_MATRIX": UI.mtx_dcp_field,
-            "AIM_MATRIX": UI.mtx_aim_field,
-            "WORLD_MATRIX": UI.wm_field,
-            "PARENT_OFFSET_MATRIX": UI.pom_field,
-            "LOCAL_OFFSET_MATRIX": UI.lom_field,
-            "JOINT": UI.jnt_field,
-            "GUIDE": UI.gd_field,
-            "CONTROLLER": UI.ctrl_field,
-            "IK": UI.ik_field,
-            "FK": UI.fk_field,
-            "DISTANCEBETWEEN": UI.dist_b_field,
-            "SUM": UI.sum_field,
-            "MULTIPLY": UI.mult_field,
-            "MULTIPLYDIVIDE": UI.mult_div_field,
-            "GROUP": UI.grp_field,
-            "ARM": UI.arm_field_custom,
-            "SHOULDER": UI.sh_field,
-            "ELBOW": UI.elbow_field,
-            "HAND": UI.hand_field,
-            "LEG": UI.leg_field_custom,
-            "KNEE": UI.knee_field,
-            "ANKLE": UI.ankle_field,
-            "FOOT": UI.foot_field,
-            "BALL": UI.ball_field,
-            "TOE": UI.toe_field,
-            "SPINE": UI.spine_field_custom,
-            "ROOT": UI.root_field,
-            "CLAVICLE": UI.clavicle_field,
-            "HEAD": UI.head_field,
-            "NECK": UI.neck_field,
-            "EYE": UI.eye_field,
-            "JAW": UI.jaw_field,
-            "LEFT": UI.l_field,
-            "RIGHT": UI.r_field,
-            "CENTER": UI.c_field,
+            "MATRIX": mtx_field,
+            "MULTIPLY_MATRIX": mtx_mlt_field,
+            "INVERSE_MATRIX": mtx_inv_field,
+            "DECOMPOSE_MATRIX": mtx_dcp_field,
+            "AIM_MATRIX": mtx_aim_field,
+            "WORLD_MATRIX": wm_field,
+            "PARENT_OFFSET_MATRIX": pom_field,
+            "LOCAL_OFFSET_MATRIX": lom_field,
+            "JOINT": jnt_field,
+            "GUIDE": gd_field,
+            "CONTROLLER": ctrl_field,
+            "IK": ik_field,
+            "FK": fk_field,
+            "DISTANCEBETWEEN": dist_b_field,
+            "SUM": sum_field,
+            "MULTIPLY": mult_field,
+            "MULTIPLYDIVIDE": mult_div_field,
+            "GROUP": grp_field,
+            "ARM": arm_field_custom,
+            "SHOULDER": sh_field,
+            "ELBOW": elb_field,
+            "HAND": hand_field,
+            "THUMB": "thumb",
+            "INDEX": "index",
+            "MIDDLE": "middle",
+            "RING": "ring",
+            "PINKY": "pinky",
+            "METACARPUS": "metacarpus",
+            "LEG": leg_field_custom,
+            "KNEE": knee_field,
+            "ANKLE": ankle_field,
+            "FOOT": foot_field,
+            "BALL": ball_field,
+            "TOE": toe_field,
+            "SPINE": spine_field_custom,
+            "ROOT": root_field,
+            "CLAVICLE": clavicle_field,
+            "HEAD": head_field,
+            "NECK": neck_field,
+            "EYE": eye_field,
+            "JAW": jaw_field,
+            "LEFT": l_field,
+            "RIGHT": r_field,
+            "CENTER": c_field,
         })
 
     return constants
@@ -283,35 +372,61 @@ def get_naming_constants():
 # UI
 
 def UI():
-
+    # Expose frequently-used widget names to module scope so callbacks can access them
+    global custom_naming, naming_custom_frame, option_naming, option_caps, option_chrName, char_name_field, naming_example, is_quad_field, arm_field, leg_field, spine_field, mtx_field, mtx_mlt_field, mtx_inv_field, mtx_dcp_field, mtx_aim_field, wm_field, pom_field, lom_field, jnt_field, gd_field, ctrl_field, ik_field, fk_field, dist_b_field, sum_field, mult_field, mult_div_field, grp_field, arm_field_custom, sh_field, elb_field, hand_field, leg_field_custom, knee_field, ankle_field, foot_field, ball_field, toe_field, spine_field_custom, root_field, clavicle_field, head_field, neck_field, eye_field, jaw_field, l_field, r_field, c_field, metacarpus_field
     # Window -------------------------------------------------------------------------------------------
     if cmds.window ("mtxAutoRig", ex=1): cmds.deleteUI ("mtxAutoRig")
-    window = cmds.window ("mtxAutoRig", t="Matrix Auto Rig v0.1", w=225, mnb=0, mxb=0, s=1,)
+    window = cmds.window ("mtxAutoRig", t="Matrix Auto Rig v0.1", w=225, s=1)
     
     # Layout -------------------------------------------------------------------------------------------
-    mainLayout = cmds.formLayout("mtxAutoRigForm", numberOfDivisions=100)
+    mainForm = cmds.formLayout(parent=window)
+
+    # Main Scroll and Column (placed inside the form)
+    mainScroll = cmds.scrollLayout(horizontalScrollBarThickness=0,
+                                   verticalScrollBarThickness=16,
+                                   parent=mainForm)
+
+    mainColumn = cmds.columnLayout(adjustableColumn=True,
+                                   columnAlign='center',
+                                   parent=mainScroll)
+
+    # ========================================================================================================
+    # 1) About layout -> about frame
+    # ========================================================================================================
+    about_layout = cmds.columnLayout(adjustableColumn=True, parent=mainColumn)
+    about_Frame = cmds.frameLayout("about",
+        label='News & Updates',
+        cll=1,
+        cl=0,
+        bv=0,
+        cc=partial(cmds.window, "mtxAutoRig", e=1, h=200),
+        parent=about_layout
+        )
+    aboutText1 = cmds.text(l='Welcome to Matrix Auto Rig v0.1!\n', parent=about_Frame)
+    aboutText2 = cmds.text(l='- This is the initial release with basic guide creation and rig structure setup.\n- More features coming soon!\n', parent=about_Frame)
+    aboutText3 = cmds.text(l='\n- Stay tuned for updates on the <a href="https://github.com/MarcadrienLePape/maya-matrix-autorig">Github Repo.</a>', parent=about_Frame)
     
-    about_Frame = cmds.frameLayout("about", 
-        label='News & Updates', 
-        cll=1, 
-        cl=0, 
-        bv=0, 
-        cc=partial(cmds.window, "mtxAutoRig", e=1, h=200))
+    howto_frame = cmds.frameLayout(
+        label="How to use Matrix Auto Rig",
+        collapsable=True,
+        collapse=True,
+        marginWidth=10,
+        marginHeight=10,
+        parent=about_Frame,
+    )
+    howtoText1 = cmds.text(l='1 - Set if quadriped', parent=howto_frame)
+    howtoText2 = cmds.text(l='2 - Set Number of arms/legs/spine controllers', parent=howto_frame)
+    howtoText3 = cmds.text(l='3 - Generate Locators and place of character', parent=howto_frame)
+    howtoText4 = cmds.text(l='4 - Set Naming options if wanted', parent=howto_frame)
+    howtoText5 = cmds.text(l='5 - Generate the rig and get the joints from the joints group', parent=howto_frame)
+    howtoText3 = cmds.text(l='6 - Skin and Enjoy !', parent=howto_frame)
     
-    about_Layout = cmds.formLayout("aboutLayout", 
-        numberOfDivisions=100, 
-        bgc=(0.2, 0.2, 0.2))
+    # separator
+    sep_about = cmds.separator(h=8, style='in', parent=mainColumn)
     
-    mainScroll = cmds.scrollLayout("mtxAutoRigScroll", 
-        horizontalScrollBarThickness=0, 
-        verticalScrollBarThickness=16, 
-        parent=window)
-    
-    mainColumn = cmds.columnLayout("mtxAutoRigColumn", 
-        adjustableColumn=True, 
-        columnAlign='center', 
-        parent=mainScroll)
-    
+    # ========================================================================================================
+    # 2) Options Frame -> options layout
+    # ========================================================================================================
     options_frame = cmds.frameLayout(
         label="Rig Generation Options",
         collapsable=True,
@@ -321,49 +436,8 @@ def UI():
         parent=mainColumn,
         labelAlign='center'
     )
+    option_column = cmds.columnLayout(adjustableColumn=True, parent=options_frame, columnAlign='center')
     
-    option_column = cmds.columnLayout(adjustableColumn=True, 
-        parent=options_frame, 
-        columnAlign='center')
-
-    naming_options_frame = cmds.frameLayout(
-        label="Naming Options",
-        collapsable=True,
-        collapse=True,
-        marginWidth=2,
-        marginHeight=5,
-        parent=mainColumn,
-        labelAlign='center'
-        )
-    
-    naming_column = cmds.columnLayout(adjustableColumn=True,
-        parent=naming_options_frame,
-        columnAlign='center')
-    
-    scroll_layout = cmds.scrollLayout(
-        horizontalScrollBarThickness=0,
-        verticalScrollBarThickness=16,
-        height=300,
-        parent=naming_custom_frame
-        )
-
-    custom_column = cmds.columnLayout(
-        adjustableColumn=True,
-        parent=scroll_layout,
-        columnAlign='center'
-        )
-
-    cmds.setParent(mainLayout)
-
-    # Labels -------------------------------------------------------------------------------------------
-    linkText = cmds.text(l='<a href="https://github.com/MarcadrienLePape/maya-matrix-autorig">Github Repo.</a>', hl=True)
-
-    # Separators -------------------------------------------------------------------------------------------
-    sep01 = cmds.separator(h=10, parent=mainColumn)
-    sep02 = cmds.separator(h=5, parent=mainColumn)
-    sep03 = cmds.separator(h=15, parent=mainColumn)
-
-    # Option Fields -------------------------------------------------------------------------------------------
     is_quad_field = cmds.optionMenuGrp(
          l="Is quadriped?", 
          p=options_frame)
@@ -390,13 +464,80 @@ def UI():
         numberOfFields=1,
         parent=options_frame
     )
+    
+    # ========================================================================================================
+    # separator
+    # ========================================================================================================
+    sep_options = cmds.separator(h=8, style='in', parent=mainColumn)
 
+    # ========================================================================================================
+    # 3) Create guides button
+    # ========================================================================================================
+    cmds.button(label="Generate Locator Guides", height=30, command=create_guides, parent=mainColumn)
+
+    # ========================================================================================================
+    # separator
+    # ========================================================================================================
+    sep_guides = cmds.separator(h=8, style='in', parent=mainColumn)
+    
+    # ========================================================================================================
+    # 4) Naming Options Frame
+    # ========================================================================================================
+    naming_options_frame = cmds.frameLayout(
+        label="Naming Options",
+        collapsable=True,
+        collapse=True,
+        marginWidth=2,
+        marginHeight=5,
+        parent=mainColumn,
+        labelAlign='center'
+        )
+    naming_column = cmds.columnLayout(adjustableColumn=True, parent=naming_options_frame, columnAlign='center')
+
+    naming_custom_frame = cmds.frameLayout(
+            label="Custom Naming Options",
+            collapsable=True,
+            collapse=True,
+            marginWidth=2,
+            marginHeight=5,
+            parent=naming_options_frame,
+            labelAlign='center'
+        )
+    scroll_layout = cmds.scrollLayout(horizontalScrollBarThickness=0, verticalScrollBarThickness=16, height=300, parent=naming_custom_frame)
+    custom_column = cmds.columnLayout(adjustableColumn=True, parent=scroll_layout, columnAlign='center')
+
+    # ========================================================================================================
+    # separator
+    # ========================================================================================================
+    sep_naming = cmds.separator(h=8, style='in', parent=mainColumn)
+
+    # ========================================================================================================
+    # 5) Generate rig button
+    # ========================================================================================================
+    cmds.button(label="Generate Rig", height=30, command=generate_rig, parent=mainColumn)
+    
+    # ========================================================================================================
+    # Footer
+    # ========================================================================================================
+    footer_frame = cmds.frameLayout(labelVisible=False, parent=mainForm, height=24, bgc=(0., 0.1, 0.1))
+    sep_footer = cmds.separator(h=3, style='in', parent=footer_frame)
+    linkText = cmds.text(l='Script by Marc-adrien LE PAPE', hl=True, parent=footer_frame)
+    try:
+        cmds.formLayout(mainForm, edit=True,
+                        attachForm=[(mainScroll, 'top', 0), (mainScroll, 'left', 0), (mainScroll, 'right', 0),
+                                    (footer_frame, 'left', 0), (footer_frame, 'right', 0), (footer_frame, 'bottom', 0)],
+                        attachControl=[(mainScroll, 'bottom', 0, footer_frame)])
+    except Exception:
+        pass
+    
+    # ========================================================================================================
+    # Naming Options Fields
     option_caps = cmds.radioButtonGrp(
         label="With Caps?",
         labelArray2=["Yes", "No"],
         numberOfRadioButtons=2,
         select=2,
-        changeCommand=update_naming_example,
+        changeCommand=partial(update_naming_example),
         parent=naming_column
         )
 
@@ -405,42 +546,36 @@ def UI():
         labelArray2=["Yes", "No"],
         numberOfRadioButtons=2,
         select=2,
-        changeCommand=update_naming_example,
+        changeCommand=partial(update_naming_example),
         parent=naming_column
         )
-
-    option_naming = cmds.optionMenuGrp(
-        label="Naming Convention",
-        changeCommand=update_naming_example,
-        parent=naming_column
+    
+    char_name_field = cmds.textFieldGrp(
+        label="Character Name:",
+        text="",
+        changeCommand=partial(update_naming_example),
+        parent=naming_column,
         )
-    cmds.menuItem(label="chrName_Side_Group_Part_Number_Component")
-    cmds.menuItem(label="chrName_Component_Group_Part_Number_Side")
-    cmds.menuItem(label="chrName_Group_Component_Part_Side_Number")
-
+    
     naming_example = cmds.text(
         label="example : l_off_hand_jnt",
         align='center',
         parent=naming_column
         )
-
+    
     custom_naming = cmds.radioButtonGrp(
         label="Custom Naming?",
         labelArray2=["Yes", "No"],
         numberOfRadioButtons=2,
         select=2,
-        changeCommand=toggle_custom_naming,
+        changeCommand=partial(toggle_custom_naming),
         parent=naming_column
         )  
 
-    char_name_field = cmds.textFieldGrp(
-        label="Character Name:",
-        text="",
-        parent=naming_column,
-        visible=False
-        )
-    
-
+    # ========================================================================================================
+    # Custom Naming Constants Fields
+    # ========================================================================================================
+    text01 = cmds.text(l="Nodes", align='center', parent=custom_column)
     mtx_field = cmds.textFieldGrp(
         label="Matrix",
         text="Mtx",
@@ -548,8 +683,10 @@ def UI():
         text="Grp",
         parent=custom_column
         )
-
-    # Part constants fields
+    
+    text03 = cmds.text(l="Arm", align='center', parent=custom_column)
+    sep01 = cmds.separator(h=8, style='in', parent=custom_column)
+    
     arm_field_custom = cmds.textFieldGrp(
         label="Arm",
         text="Arm",
@@ -567,13 +704,53 @@ def UI():
         text="Elb",
         parent=custom_column
         )
-
+    
+    text04 = cmds.text(l="Hand", align='center', parent=custom_column)
+    sep02 = cmds.separator(h=8, style='in', parent=custom_column)
     hand_field = cmds.textFieldGrp(
         label="Hand",
         text="Hand",
         parent=custom_column
         )
+    
+    thumb_field = cmds.textFieldGrp(
+        label="Thumb",
+        text="Tmb",
+        parent=custom_column
+        )
+    
+    index_field = cmds.textFieldGrp(
+        label="Index",
+        text="Idx",
+        parent=custom_column
+        )
+    
+    middle_field = cmds.textFieldGrp(
+        label="Middle",
+        text="Mid",
+        parent=custom_column
+        )
+    
+    ring_field = cmds.textFieldGrp(
+        label="Ring",
+        text="Rng",
+        parent=custom_column
+        )
+    
+    pinky_field = cmds.textFieldGrp(
+        label="Pinky",
+        text="Pnk",
+        parent=custom_column
+        )
+    
+    metacarpus_field = cmds.textFieldGrp(
+        label="Metacarpus",
+        text="Met",
+        parent=custom_column
+        )
 
+    text05 = cmds.text(l="Legs", align='center', parent=custom_column)
+    sep03 = cmds.separator(h=8, style='in', parent=custom_column)
     leg_field_custom = cmds.textFieldGrp(
         label="Leg",
         text="Leg",
@@ -610,6 +787,9 @@ def UI():
             parent=custom_column
         )
 
+    text06 = cmds.text(l="Spine", align='center', parent=custom_column)
+    sep04 = cmds.separator(h=8, style='in', parent=custom_column)
+    
     spine_field_custom = cmds.textFieldGrp(
         label="Spine",
         text="Spine",
@@ -627,7 +807,10 @@ def UI():
         text="Clavicle",
         parent=custom_column
         )
-
+    
+    text07 = cmds.text(l="Head", align='center', parent=custom_column)
+    sep05 = cmds.separator(h=8, style='in', parent=custom_column)
+    
     head_field = cmds.textFieldGrp(
         label="Head",
         text="Head",
@@ -651,8 +834,10 @@ def UI():
         text="Jaw",
         parent=custom_column
         )
+    
+    text08 = cmds.text(l="Sides", align='center', parent=custom_column)
+    sep06 = cmds.separator(h=8, style='in', parent=custom_column)
 
-    # Side constants fields
     l_field = cmds.textFieldGrp(
         label="Left",
         text="L",
@@ -670,91 +855,70 @@ def UI():
         text="C",
         parent=custom_column
         )
-    
-    # Buttons
-    cmds.button(
-        label="Generate Locator Guides",
-        height=30,
-        command=create_guides,
-        parent=mainColumn
-        )
 
-    cmds.button(
-        label="Generate Rig",
-        height=30,
-        command=generate_rig,
-        parent=mainColumn
-    )
+    # Initialize naming UI state (gray out custom naming if radio is set to No)
+    try:
+        # Ensure example text reflects defaults
+        update_naming_example()
+        toggle_custom_naming()
+    except Exception:
+        pass
+
+    # Show the window
+    try:
+        cmds.showWindow(window)
+    except Exception:
+        pass
 
 def toggle_custom_naming(*args):
-    naming = cmds.radioButtonGrp(self.custom_naming, query=True, select=True) == 1
+    try:
+        state = cmds.radioButtonGrp(custom_naming, q=True, select=True) == 1
+    except:
+        state = False
         
-    if naming and not self.naming_custom_frame:
-        self.create_custom_naming_frame()
-    elif not naming and self.naming_custom_frame:
-        try:
-            cmds.deleteUI(self.naming_custom_frame)
-            self.naming_custom_frame = None
-        except Exception as e:
-            print(f"Error deleting custom naming frame: {e}")
-        self.update_naming_example()
+    try:
+        cmds.frameLayout(naming_custom_frame, e=True, enable=state)
+    except:
+        pass
 
-def create_custom_naming_frame():
-        
-    
+    update_naming_example()
 
-def update_naming_example(self, *args):
+def update_naming_example(*args):
+    global addCaps, addChrName
+    try:
+        addChrName = cmds.radioButtonGrp(option_chrName, q=True, select=True) == 1
+    except:
+        addChrName = False
+
+    try:
+        addCaps = cmds.radioButtonGrp(option_caps, q=True, select=True) == 1
+    except:
+        addCaps = False
+
+    try:
+        cmds.textFieldGrp(char_name_field, e=True, enable=addChrName)
+    except:
+        pass
     
-    sel = cmds.optionMenuGrp(self.option_naming, query=True, value=True)
-    addChrName = cmds.radioButtonGrp(self.option_chrName, query=True, select=True) == 1
-    addCapsName = cmds.radioButtonGrp(self.option_caps, query=True, select=True) == 1
-        
-    # Show/hide character name field
+    char_prefix = ""
     if addChrName:
-        cmds.textFieldGrp(self.char_name_field, edit=True, visible=True)
+        prefix = cmds.textFieldGrp(char_name_field, q=True, text=True)
+        prefix = prefix.strip() if prefix else "chr"
+        char_prefix = prefix + "_"
+        
+    if addCaps:
+        example = f"CHR_L_GRPOFF_Hand_01_JNT"
     else:
-        cmds.textFieldGrp(self.char_name_field, edit=True, visible=False)
-    if addCapsName == False:
-        if addChrName == False:
-            if sel == "chrName_Side_Group_Part_Number_Component":
-                text = "Example: l_grpOff_hand_01_jnt"
-            elif sel == "chrName_Component_Group_Part_Number_Side":
-                text = "Example: jnt_grpOff_hand_01_l"
-            elif sel == "chrName_Group_Component_Part_Side_Number":
-                text = "Example: grpOff_jnt_hand_l_01"
-            else:
-                text = "No Rig Here but Marc-adrien Le Pape is a total badass"
-        else:
-            if sel == "chrName_Side_Group_Part_Number_Component":
-                text = "Example: chrName_l_grpOff_hand_01_jnt"
-            elif sel == "chrName_Component_Group_Part_Number_Side":
-                text = "Example: chrName_jnt_grpOff_hand_01_l"
-            elif sel == "chrName_Group_Component_Part_Side_Number":
-                text = "Example: chrName_grpOff_jnt_hand_l_01"
-            else:
-                text = "No Rig Here but Marc-adrien Le Pape is a not that good in code"
-    else:
-        if addChrName == False:
-            if sel == "chrName_Side_Group_Part_Number_Component":
-                text = "Example: L_GRPOff_Hand_01_JNT"
-            elif sel == "chrName_Component_Group_Part_Number_Side":
-                text = "Example: JNT_GRPOff_Hand_01_L"
-            elif sel == "chrName_Group_Component_Part_Side_Number":
-                text = "Example: GRPOff_JNT_Hand_L_01"
-            else:
-                text = "No Rig Here but Marc-adrien Le Pape is a really good guy"
-        else:
-            if sel == "chrName_Side_Group_Part_Number_Component":
-                text = "Example: CHRNAME_L_GRPOff_hand_01_JNT"
-            elif sel == "chrName_Component_Group_Part_Number_Side":
-                text = "Example: CHRNAME_JNT_GRPOff_hand_01_L"
-            elif sel == "chrName_Group_Component_Part_Side_Number":
-                text = "Example: CHRNAME_GRPOff_JNT_hand_L_01"
-            else:
-                text = "No Rig Here but Marc-adrien Le Pape is Cool"
-    cmds.text(self.naming_example, edit=True, label=text)
+        example = f"chr_l_grpOff_hand_01_jnt"
 
+    try:
+        cmds.text(naming_example, e=True, label=f"Example: {example}")
+    except:
+        pass
 
+# ============================================================
+# Initialization
+# ============================================================
 def main():
     showWindow = UI()
     return showWindow
