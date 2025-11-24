@@ -13,10 +13,9 @@ This work is based of the incredible teaching of Jean-Paul Tossings over at http
 ## ✨ Features
 
 * ⚙️ **Matrix-based architecture** – Faster and cleaner rigs using Maya’s matrix nodes.
-* 🧩 **Modular components** – Build custom rigs with plug-and-play modules (spine, limbs, face, etc.).
-* 🚀 **Non-destructive workflow** – Easily update and rebuild rigs while preserving animation data.
-* 💡 **Open and extensible** – Simple Python/MEL interface for custom extensions.
-* 🧠 **Educational** – A great resource for learning advanced rigging techniques.
+* 🚀 **Non-destructive workflow** – Easily update and rebuild rigs while preserving animation data. (TBD)
+* 💡 **Open and extensible** – Simple interface for custom extensions.
+* 🧠 **Educational** – A great resource for learning advanced rigging techniques / advance scripting in maya.
 
 ---
 
@@ -30,21 +29,17 @@ This work is based of the incredible teaching of Jean-Paul Tossings over at http
 
 ## 📦 Installation
 
-1. Clone or download this repository:
-
-   ```bash
-   git clone https://github.com/MarcadrienLePape/maya-matrix-autorig.git
-   ```
-2. Add the folder to your Maya scripts path.
-3. In Maya’s Script Editor, drag and drop : mtx_autorig_dragdrop
+- Download reporsitory
+- In Maya’s Script Editor, drag and drop : mtx_autorig_dragdrop
 
 ---
 
 ## 🧑‍💻 Usage
 
-* Open the **Matrix AutoRig** window from the shelf or via script.
-* Choose the components you want (spine, arms, legs, face, etc.).
+* Drag and drop **Matrix AutoRig** into the viewport or from the shelf (in progress) or via script.
+* Choose the rig config you want.
 * Adjust guide placements.
+* Do your own naming and add character prefixes, caps, special characters...
 * Build the rig with one click!
 
 ---
