@@ -15,6 +15,11 @@ from functools import partial
 
 def create_guides(*args):
     try:
+        is_quad = cmds.optionMenuGrp(is_quad_field, q=True, value=True) == "Yes"
+    except Exception:
+        is_quad = False
+        
+    try:
         num_spine = cmds.intFieldGrp(spine_field, q=True, value1=True)
     except Exception:
         num_spine = 3
@@ -23,13 +28,25 @@ def create_guides(*args):
         num_arms = cmds.intFieldGrp(arm_field, q=True, value1=True)
     except Exception:
         num_arms = 1
+        
+    try:
+        num_legs = cmds.intFieldGrp(leg_field, q=True, value1=True)
+    except Exception:
+        num_legs = 1
+    
+    try:
+        do_face = cmds.optionMenuGrp(do_face_field, q=True, value=True) == "Yes" == True
+    except Exception:
+        do_face = False
 
     constants = get_naming_constants()
     ROOT = constants["ROOT"]
     SPINE = constants["SPINE"]
+    
     LEFT = constants["LEFT"]
     RIGHT = constants["RIGHT"]
     GUIDE = constants["GUIDE"]
+    
     ARM = constants["ARM"]
     SHOULDER = constants["SHOULDER"]
     ELBOW = constants["ELBOW"]
@@ -43,98 +60,241 @@ def create_guides(*args):
     METACARPUS = constants["METACARPUS"]
     
     LEG = constants["LEG"]
+    KNEE = constants["KNEE"]
+    ANKLE = constants["ANKLE"]
+    BALL = constants["BALL"]
+    TOE = constants["TOE"]
+    
+    HEAD = constants["HEAD"]
+    NECK = constants["NECK"]
+    JAW = constants["JAW"]
+    EYE = constants["EYE"]
+    
+    
+    CHRNAME = constants["CHRNAME"]
 
+    # Base Group
+    grp_rig = cmds.createNode('transform', name="{}matrix_rig".format(CHRNAME))
+    
     # Create root locator
-    root = cmds.spaceLocator(name="{}_{}".format(ROOT, GUIDE))[0]
-    cmds.setAttr("{}.translateY".format(root), 5)
+    root = cmds.spaceLocator(name="{}{}_{}".format(CHRNAME, ROOT, GUIDE))[0]
+    cmds.setAttr("{}.translateY".format(root), 7)
+    grpMod_root = cmds.createNode('transform', name="{}{}_mod".format(CHRNAME,ROOT))
+    grpSetup_root = cmds.createNode('transform', name="{}{}_setup".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpInputs_root = cmds.createNode('transform', name="{}{}_rig".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpGuides_root= cmds.createNode('transform', name="{}{}_guides".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpControls_root = cmds.createNode('transform', name="{}{}_controls".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpJoints_root = cmds.createNode('transform', name="{}{}_joints".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpRigNodes_root = cmds.createNode('transform', name="{}{}_nodes".format(CHRNAME,ROOT), parent=grpMod_root)
+    grpOutputs_root = cmds.createNode('transform', name="{}{}_output".format(CHRNAME,ROOT), parent=grpMod_root)
+    cmds.parent(root, grpGuides_root)
+    cmds.parent(grpMod_root, grp_rig)
 
     # Create spine locators
     spine_guides = []
-
-    for i in range(num_spine):
-        loc = cmds.spaceLocator(name="{}_{}_{}".format(SPINE, i+1, GUIDE))[0]
-        cmds.setAttr("{}.translateY".format(loc), 5 + i*2.5)
-        spine_guides.append(loc)
-        if i == 0:
-            cmds.parent(loc, root)
-        else:
-            cmds.parent(loc, spine_guides[i-1])
-
-    # Create arm locators (left and right)
-    for side in [LEFT, RIGHT]:
-        for arm_idx in range(num_arms):
-            # Shoulder
-            shoulder = cmds.spaceLocator(
-                name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, SHOULDER, GUIDE)
-            )[0]
-            cmds.parent(shoulder, spine_guides[-1])
-            cmds.setAttr("{}.translateY".format(shoulder), 0 - num_arms)
-            cmds.setAttr("{}.translateX".format(shoulder), 1.5 if side == LEFT else -1.5)
-
-            # Elbow
-            elbow = cmds.spaceLocator(
-                name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, ELBOW, GUIDE)
-            )[0]
-            cmds.parent(elbow, shoulder)
-            cmds.setAttr("{}.translateY".format(elbow), 0)
-            cmds.setAttr("{}.translateX".format(elbow), 3 if side == LEFT else (-3))
-            cmds.setAttr("{}.translateZ".format(elbow), -2)
-
-            # Hand
-            hand = cmds.spaceLocator(
-                name="{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, GUIDE)
-            )[0]
-            cmds.parent(hand, elbow)
-            cmds.setAttr("{}.translateY".format(hand), 0)
-            cmds.setAttr("{}.translateX".format(hand), 3 if side == LEFT else (-3))
-            cmds.setAttr("{}.translateZ".format(hand), 2)
+    if is_quad == True:
+        print("Quadruped mode not implemented yet.")
+        pass
+    else:
+        for i in range(num_spine):
+            loc = cmds.spaceLocator(name="{}{}_{}_{}".format(CHRNAME, SPINE, i+1, GUIDE))[0]
+            cmds.setAttr("{}.translateY".format(loc), 7 + i*2.5)
+            spine_guides.append(loc)
+            if i == 0:
+                cmds.parent(loc, root)
+            else:
+                cmds.parent(loc, spine_guides[i-1])
             
-            # Fingers
-            for fingers in [INDEX, MIDDLE, RING, PINKY]:
-                meta = cmds.spaceLocator(
-                    name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, fingers, METACARPUS, GUIDE))[0]
-                cmds.parent(meta, hand)
-                cmds.setAttr("{}.translateY".format(meta), 0)
-                cmds.setAttr("{}.translateX".format(meta), 0.5 if side == LEFT else -0.5)
-                if fingers == INDEX:
-                    cmds.setAttr("{}.translateZ".format(meta), 1)
-                elif fingers == MIDDLE:
-                    cmds.setAttr("{}.translateZ".format(meta), 0)
-                elif fingers == RING:
-                    cmds.setAttr("{}.translateZ".format(meta), -1)
-                else:
-                    cmds.setAttr("{}.translateZ".format(meta), -2)
-                prev = meta
-                
-                for f in range(4):
-                    finger = cmds.spaceLocator(
-                        name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, fingers, f+1, GUIDE))[0]
-                    cmds.parent(finger, prev)
-                    cmds.setAttr("{}.translateY".format(finger), 0)
-                    cmds.setAttr("{}.translateX".format(finger), (0.5+f*0.3) if side == LEFT else -(0.5+f*0.3))
-                    cmds.setAttr("{}.translateZ".format(finger), 0)
-                    prev = finger
 
-            # Thumb
-            for thumb in range(1):
-                meta = cmds.spaceLocator(
-                        name="{}_{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, HAND, THUMB, METACARPUS, GUIDE))[0]
-                cmds.parent(meta, hand)
-                cmds.setAttr("{}.translateX".format(meta), 0.3 if side == LEFT else -0.3)
-                cmds.setAttr("{}.translateY".format(meta), 0)
-                cmds.setAttr("{}.translateZ".format(meta), 2 if side == LEFT else -2)
-                prev = meta
+        # Create arm locators (left and right)
+        for side in [LEFT, RIGHT]:
+            for arm_idx in range(num_arms):
+                grpMod_arm = cmds.createNode('transform', name="{}{}_{}_{}_mod".format(CHRNAME,side, arm_idx, ARM))
+                grpSetup_arm = cmds.createNode('transform', name="{}{}_{}_{}_setup".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpInputs_arm = cmds.createNode('transform', name="{}{}_{}_{}_rig".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpGuides_arm= cmds.createNode('transform', name="{}{}_{}_{}_guides".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpControls_arm = cmds.createNode('transform', name="{}{}_{}_{}_controls".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpJoints_arm = cmds.createNode('transform', name="{}{}_{}_{}_joints".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpRigNodes_arm = cmds.createNode('transform', name="{}{}_{}_{}_nodes".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                grpOutputs_arm = cmds.createNode('transform', name="{}{}_{}_{}_output".format(CHRNAME,side, arm_idx, ARM), parent=grpMod_arm)
+                cmds.parent(grpMod_arm, grp_rig)
                 
-                for t in range(3):
-                    thumb_loc = cmds.spaceLocator(
-                        name="{}_{}_{}_{}_{}_{}".format(side, ARM, arm_idx+1, THUMB, t+1, GUIDE))[0]
-                    cmds.parent(thumb_loc, prev)
-                    cmds.setAttr("{}.translateY".format(thumb_loc), 0)
-                    cmds.setAttr("{}.translateX".format(thumb_loc), 0.5+t*0.3 if side == LEFT else -(0.5+t*0.3))
-                    cmds.setAttr("{}.translateZ".format(thumb_loc), 0)
-                    prev = thumb_loc
+                # Shoulder
+                shoulder = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, SHOULDER, GUIDE)
+                )[0]
+                cmds.parent(shoulder, spine_guides[i])
+                cmds.setAttr("{}.translateY".format(shoulder), 0 - num_arms)
+                cmds.setAttr("{}.translateX".format(shoulder), 1.5 if side == LEFT else -1.5)
+                cmds.parent(shoulder, grpGuides_arm)
+
+                # Elbow
+                elbow = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, ELBOW, GUIDE)
+                )[0]
+                cmds.parent(elbow, shoulder)
+                cmds.setAttr("{}.translateY".format(elbow), 0)
+                cmds.setAttr("{}.translateX".format(elbow), 3 if side == LEFT else (-3))
+                cmds.setAttr("{}.translateZ".format(elbow), -2)
+
+                # Hand
+                hand = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, HAND, GUIDE)
+                )[0]
+                cmds.parent(hand, elbow)
+                cmds.setAttr("{}.translateY".format(hand), 0)
+                cmds.setAttr("{}.translateX".format(hand), 3 if side == LEFT else (-3))
+                cmds.setAttr("{}.translateZ".format(hand), 2)
+                
+                # Fingers
+                for fingers in [INDEX, MIDDLE, RING, PINKY]:
+                    meta = cmds.spaceLocator(
+                        name="{}{}_{}_{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, HAND, fingers, METACARPUS, GUIDE))[0]
+                    cmds.parent(meta, hand)
+                    cmds.setAttr("{}.translateY".format(meta), 0)
+                    cmds.setAttr("{}.translateX".format(meta), 0.5 if side == LEFT else -0.5)
+                    if fingers == INDEX:
+                        cmds.setAttr("{}.translateZ".format(meta), 1)
+                    elif fingers == MIDDLE:
+                        cmds.setAttr("{}.translateZ".format(meta), 0)
+                    elif fingers == RING:
+                        cmds.setAttr("{}.translateZ".format(meta), -1)
+                    else:
+                        cmds.setAttr("{}.translateZ".format(meta), -2)
+                    prev = meta
                     
+                    for f in range(4):
+                        finger = cmds.spaceLocator(
+                            name="{}{}_{}_{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, HAND, fingers, f+1, GUIDE))[0]
+                        cmds.parent(finger, prev)
+                        cmds.setAttr("{}.translateY".format(finger), 0)
+                        cmds.setAttr("{}.translateX".format(finger), (0.5+f*0.3) if side == LEFT else -(0.5+f*0.3))
+                        cmds.setAttr("{}.translateZ".format(finger), 0)
+                        prev = finger
 
+                # Thumb
+                for thumb in range(1):
+                    meta = cmds.spaceLocator(
+                            name="{}{}_{}_{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, HAND, THUMB, METACARPUS, GUIDE))[0]
+                    cmds.parent(meta, hand)
+                    cmds.setAttr("{}.translateX".format(meta), 0.3 if side == LEFT else -0.3)
+                    cmds.setAttr("{}.translateY".format(meta), 0)
+                    cmds.setAttr("{}.translateZ".format(meta), 2 if side == LEFT else -2)
+                    prev = meta
+                    
+                    for t in range(3):
+                        thumb_loc = cmds.spaceLocator(
+                            name="{}{}_{}_{}_{}_{}_{}".format(CHRNAME, side, ARM, arm_idx+1, THUMB, t+1, GUIDE))[0]
+                        cmds.parent(thumb_loc, prev)
+                        cmds.setAttr("{}.translateY".format(thumb_loc), 0)
+                        cmds.setAttr("{}.translateX".format(thumb_loc), 0.5+t*0.3 if side == LEFT else -(0.5+t*0.3))
+                        cmds.setAttr("{}.translateZ".format(thumb_loc), 0)
+                        prev = thumb_loc
+            
+            # Create leg locators (left and right)
+            for leg_idx in range(num_legs):
+                grpMod_leg = cmds.createNode('transform', name="{}{}_{}_{}_mod".format(CHRNAME,side, leg_idx+1, LEG))
+                grpSetup_leg = cmds.createNode('transform', name="{}{}_{}_{}_setup".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpInputs_leg = cmds.createNode('transform', name="{}{}_{}_{}_rig".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpGuides_leg= cmds.createNode('transform', name="{}{}_{}_{}_guides".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpControls_leg = cmds.createNode('transform', name="{}{}_{}_{}_controls".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpJoints_leg = cmds.createNode('transform', name="{}{}_{}_{}_joints".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpRigNodes_leg = cmds.createNode('transform', name="{}{}_{}_{}_nodes".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                grpOutputs_leg = cmds.createNode('transform', name="{}{}_{}_{}_output".format(CHRNAME,side, leg_idx+1, LEG), parent=grpMod_leg)
+                cmds.parent(grpMod_leg, grp_rig)
+                
+                # Hip
+                hip = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}".format(CHRNAME, side, LEG, leg_idx+1, GUIDE)
+                )[0]
+                cmds.parent(hip, root)
+                cmds.setAttr("{}.translateY".format(hip), 0)
+                cmds.setAttr("{}.translateX".format(hip), 1+leg_idx if side == LEFT else -1-leg_idx)
+
+                # Knee
+                knee = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, LEG, leg_idx+1, KNEE, GUIDE)
+                )[0]
+                cmds.parent(knee, hip)
+                cmds.setAttr("{}.translateY".format(knee), -3)
+                cmds.setAttr("{}.translateX".format(knee), 0)
+                cmds.setAttr("{}.translateZ".format(knee), 1)
+
+                # Ankle
+                ankle = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, LEG, leg_idx+1, ANKLE, GUIDE)
+                )[0]
+                cmds.parent(ankle, knee)
+                cmds.setAttr("{}.translateY".format(ankle), -3)
+                cmds.setAttr("{}.translateX".format(ankle), 0)
+                cmds.setAttr("{}.translateZ".format(ankle), -1)
+                
+                # Ball
+                ball = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, LEG, leg_idx+1, BALL, GUIDE)
+                )[0]
+                cmds.parent(ball, ankle)
+                cmds.setAttr("{}.translateY".format(ball), -1)
+                cmds.setAttr("{}.translateX".format(ball), 0)
+                cmds.setAttr("{}.translateZ".format(ball), 2)
+                
+                # Toe
+                toe = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, LEG, leg_idx+1, TOE, GUIDE)
+                )[0]
+                cmds.parent(toe, ball)
+                cmds.setAttr("{}.translateY".format(toe), 0)
+                cmds.setAttr("{}.translateX".format(toe), 0)
+                cmds.setAttr("{}.translateZ".format(toe), 1)
+        
+        for head in range(1):
+            grpMod_head = cmds.createNode('transform', name="{}{}_mod".format(CHRNAME, HEAD))
+            grpSetup_head = cmds.createNode('transform', name="{}{}_setup".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpInputs_head = cmds.createNode('transform', name="{}{}_rig".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpGuides_head= cmds.createNode('transform', name="{}{}_guides".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpControls_head = cmds.createNode('transform', name="{}{}_controls".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpJoints_head = cmds.createNode('transform', name="{}{}_joints".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpRigNodes_head = cmds.createNode('transform', name="{}{}_nodes".format(CHRNAME, HEAD), parent=grpMod_head)
+            grpOutputs_head = cmds.createNode('transform', name="{}{}_output".format(CHRNAME, HEAD), parent=grpMod_head)
+            cmds.parent(grpMod_head, grp_rig)
+            
+            # Neck
+            neck = cmds.spaceLocator(
+                name="{}{}_{}_{}_{}".format(CHRNAME, HEAD, 1, NECK, GUIDE))[0]
+            cmds.parent(neck, spine_guides[i])
+            cmds.setAttr("{}.translateY".format(neck), 2)
+            cmds.setAttr("{}.translateZ".format(neck), -1)
+            cmds.parent(neck, grpGuides_head)
+            
+            #Head 
+            head = cmds.spaceLocator(
+                name="{}{}_{}_{}".format(CHRNAME, HEAD, 1, GUIDE))[0]
+            cmds.parent(head, neck)
+            cmds.setAttr("{}.translateY".format(head), 1)
+            cmds.setAttr("{}.translateZ".format(head), 1)
+            
+            # Jaw
+            jaw = cmds.spaceLocator(
+                name="{}{}_{}_{}_{}_{}".format(CHRNAME, HEAD, 1, JAW, GUIDE))[0]
+            cmds.parent(jaw, head)
+            cmds.setAttr("{}.translateY".format(jaw), -0.5)
+            cmds.setAttr("{}.translateZ".format(jaw), 1)
+            
+            # Eyes
+            for side in [LEFT, RIGHT]:
+                eye = cmds.spaceLocator(
+                    name="{}{}_{}_{}_{}_{}".format(CHRNAME, side, HEAD, 1, EYE, GUIDE))[0]
+                cmds.parent(eye, head)
+                cmds.setAttr("{}.translateY".format(eye), 0.5)
+                cmds.setAttr("{}.translateX".format(eye), 0.5 if side == LEFT else -0.5)
+                cmds.setAttr("{}.translateZ".format(eye), 1)
+            
+            if do_face == True:
+                print("Facial rigging not implemented yet.")
+                pass
+            else:   
+                pass
+            
 #-------------------------------------------------------------------------------------------------------------------------
 # Create Rig
 
@@ -143,36 +303,6 @@ def generate_rig(*args):
 
 #---------------------------------------------------------------------------------------------------------
 # Utils
-
-def hierarchy():
-
-    constants = get_naming_constants()
-    ROOT = constants["ROOT"]
-    HEAD = constants["HEAD"]
-    SPINE = constants["SPINE"]
-
-    LEFT = constants["LEFT"]
-    RIGHT = constants["RIGHT"]
-    GUIDE = constants["GUIDE"]
-
-    LEG = constants["LEG"]
-
-    ARM = constants["ARM"]
-    SHOULDER = constants["SHOULDER"]
-
-
-    for part in [ROOT, SPINE, HEAD, LEFT + SHOULDER, RIGHT + SHOULDER, LEFT + ARM, RIGHT + ARM, LEFT + LEG, RIGHT + LEG]:
-        grpMod = cmds.createNode('transform', name="{}_mod".format(part))
-        grpSetup = cmds.createNode('transform', name="{}_setup".format(part), parent=grpMod)
-        grpInputs = cmds.createNode('transform', name="{}_rig".format(part), parent=grpMod)
-        grpGuides = cmds.createNode('transform', name="{}_guides".format(part), parent=grpMod)
-        grpControls = cmds.createNode('transform', name="{}_controls".format(part), parent=grpMod)
-        grpJoints = cmds.createNode('transform', name="{}_joints".format(part), parent=grpMod)
-        grpRigNodes = cmds.createNode('transform', name="{}_nodes".format(part), parent=grpMod)
-        grpOutputs = cmds.createNode('transform', name="{}_output".format(part), parent=grpMod)
-        
-        createHierarchy = cmds.parent(grpOutputs + grpRigNodes + grpJoints + grpControls + grpGuides + grpInputs + grpSetup, grpMod)
-
 
 def addOffset(dst, suffix='Offset'):
     grp_offset = cmds.createNode('transform', name="{}_{}".format(dst, suffix))
@@ -190,12 +320,9 @@ def addOffset(dst, suffix='Offset'):
 # Naming Constants
 
 def get_naming_constants():
-    # Safely query UI widget values with sensible defaults so this function
-    # can be called even if some widgets aren't available yet.
     try:
         customNaming = cmds.radioButtonGrp(custom_naming, q=True, select=True)
     except Exception:
-        # Default: custom naming off (2 = No in our UI setup)
         customNaming = 2
 
     try:
@@ -207,7 +334,7 @@ def get_naming_constants():
     constants = {}
 
     if customNaming == 2:
-        if addCaps == 1:
+        if addCaps == True:
             # Object constants
             constants.update({
                 "MATRIX": "Mtx",
@@ -250,10 +377,13 @@ def get_naming_constants():
                 "SPINE": "Spine",
                 "ROOT": "Root",
                 "CLAVICLE": "Clavicle",
+                
                 "HEAD": "Head",
                 "NECK": "Neck",
                 "EYE": "Eye",
                 "JAW": "Jaw",
+                
+                "CHRNAME": char_prefix,
             })
 
             # Side constants
@@ -306,10 +436,13 @@ def get_naming_constants():
                 "SPINE": "spine",
                 "ROOT": "root",
                 "CLAVICLE": "clavicle",
+                
                 "HEAD": "head",
                 "NECK": "neck",
                 "EYE": "eye",
                 "JAW": "jaw",
+                
+                "CHRNAME": char_prefix,
             })
 
             # Side constants
@@ -321,50 +454,56 @@ def get_naming_constants():
     else:
         # Custom naming constants from UI fields
         constants.update({
-            "MATRIX": mtx_field,
-            "MULTIPLY_MATRIX": mtx_mlt_field,
-            "INVERSE_MATRIX": mtx_inv_field,
-            "DECOMPOSE_MATRIX": mtx_dcp_field,
-            "AIM_MATRIX": mtx_aim_field,
-            "WORLD_MATRIX": wm_field,
-            "PARENT_OFFSET_MATRIX": pom_field,
-            "LOCAL_OFFSET_MATRIX": lom_field,
-            "JOINT": jnt_field,
-            "GUIDE": gd_field,
-            "CONTROLLER": ctrl_field,
-            "IK": ik_field,
-            "FK": fk_field,
-            "DISTANCEBETWEEN": dist_b_field,
-            "SUM": sum_field,
-            "MULTIPLY": mult_field,
-            "MULTIPLYDIVIDE": mult_div_field,
-            "GROUP": grp_field,
-            "ARM": arm_field_custom,
-            "SHOULDER": sh_field,
-            "ELBOW": elb_field,
-            "HAND": hand_field,
+            "MATRIX": cmds.textFieldGrp(mtx_field, q=True, text=True),
+            "MULTIPLY_MATRIX": cmds.textFieldGrp(mtx_mlt_field, q=True, text=True),
+            "INVERSE_MATRIX": cmds.textFieldGrp(mtx_inv_field, q=True, text=True),
+            "DECOMPOSE_MATRIX": cmds.textFieldGrp(mtx_dcp_field, q=True, text=True),
+            "AIM_MATRIX": cmds.textFieldGrp(mtx_aim_field, q=True, text=True),
+            "WORLD_MATRIX": cmds.textFieldGrp(wm_field, q=True, text=True),
+            "PARENT_OFFSET_MATRIX": cmds.textFieldGrp(pom_field, q=True, text=True),
+            "LOCAL_OFFSET_MATRIX": cmds.textFieldGrp(lom_field, q=True, text=True),
+            "JOINT": cmds.textFieldGrp(jnt_field, q=True, text=True),
+            "GUIDE": cmds.textFieldGrp(gd_field, q=True, text=True),
+            "CONTROLLER": cmds.textFieldGrp(ctrl_field, q=True, text=True),
+            "IK": cmds.textFieldGrp(ik_field, q=True, text=True),
+            "FK": cmds.textFieldGrp(fk_field, q=True, text=True),
+            "DISTANCEBETWEEN": cmds.textFieldGrp(dist_b_field, q=True, text=True),
+            "SUM": cmds.textFieldGrp(sum_field, q=True, text=True),
+            "MULTIPLY": cmds.textFieldGrp(mult_field, q=True, text=True),
+            "MULTIPLYDIVIDE": cmds.textFieldGrp(mult_div_field, q=True, text=True),
+            "GROUP": cmds.textFieldGrp(grp_field, q=True, text=True),
+            
+            "ARM": cmds.textFieldGrp(arm_field_custom, q=True, text=True),
+            "SHOULDER": cmds.textFieldGrp(sh_field, q=True, text=True),
+            "ELBOW": cmds.textFieldGrp(elb_field, q=True, text=True),
+            "HAND": cmds.textFieldGrp(hand_field, q=True, text=True),
             "THUMB": "thumb",
             "INDEX": "index",
             "MIDDLE": "middle",
             "RING": "ring",
             "PINKY": "pinky",
             "METACARPUS": "metacarpus",
-            "LEG": leg_field_custom,
-            "KNEE": knee_field,
-            "ANKLE": ankle_field,
-            "FOOT": foot_field,
-            "BALL": ball_field,
-            "TOE": toe_field,
-            "SPINE": spine_field_custom,
-            "ROOT": root_field,
-            "CLAVICLE": clavicle_field,
-            "HEAD": head_field,
-            "NECK": neck_field,
-            "EYE": eye_field,
-            "JAW": jaw_field,
-            "LEFT": l_field,
-            "RIGHT": r_field,
-            "CENTER": c_field,
+            
+            "LEG": cmds.textFieldGrp(leg_field_custom, q=True, text=True),
+            "KNEE": cmds.textFieldGrp(knee_field, q=True, text=True),
+            "ANKLE": cmds.textFieldGrp(ankle_field, q=True, text=True),
+            "FOOT": cmds.textFieldGrp(foot_field, q=True, text=True),
+            "BALL": cmds.textFieldGrp(ball_field, q=True, text=True),
+            "TOE": cmds.textFieldGrp(toe_field, q=True, text=True),
+            "SPINE": cmds.textFieldGrp(spine_field_custom, q=True, text=True),
+            "ROOT": cmds.textFieldGrp(root_field, q=True, text=True),
+            "CLAVICLE": cmds.textFieldGrp(clavicle_field, q=True, text=True),
+            
+            "HEAD": cmds.textFieldGrp(head_field, q=True, text=True),
+            "NECK": cmds.textFieldGrp(neck_field, q=True, text=True),
+            "EYE": cmds.textFieldGrp(eye_field, q=True, text=True),
+            "JAW": cmds.textFieldGrp(jaw_field, q=True, text=True),
+            
+            "LEFT": cmds.textFieldGrp(l_field, q=True, text=True),
+            "RIGHT": cmds.textFieldGrp(r_field, q=True, text=True),
+            "CENTER": cmds.textFieldGrp(c_field, q=True, text=True),
+            
+            "CHRNAME": char_prefix,
         })
 
     return constants
@@ -373,7 +512,7 @@ def get_naming_constants():
 
 def UI():
     # Expose frequently-used widget names to module scope so callbacks can access them
-    global custom_naming, naming_custom_frame, option_naming, option_caps, option_chrName, char_name_field, naming_example, is_quad_field, arm_field, leg_field, spine_field, mtx_field, mtx_mlt_field, mtx_inv_field, mtx_dcp_field, mtx_aim_field, wm_field, pom_field, lom_field, jnt_field, gd_field, ctrl_field, ik_field, fk_field, dist_b_field, sum_field, mult_field, mult_div_field, grp_field, arm_field_custom, sh_field, elb_field, hand_field, leg_field_custom, knee_field, ankle_field, foot_field, ball_field, toe_field, spine_field_custom, root_field, clavicle_field, head_field, neck_field, eye_field, jaw_field, l_field, r_field, c_field, metacarpus_field
+    global custom_naming, naming_custom_frame, option_caps, option_chrName, char_name_field, naming_example, is_quad_field, arm_field, leg_field, spine_field, do_face_field, mtx_field, mtx_mlt_field, mtx_inv_field, mtx_dcp_field, mtx_aim_field, wm_field, pom_field, lom_field, jnt_field, gd_field, ctrl_field, ik_field, fk_field, dist_b_field, sum_field, mult_field, mult_div_field, grp_field, arm_field_custom, sh_field, elb_field, hand_field, leg_field_custom, knee_field, ankle_field, foot_field, ball_field, toe_field, spine_field_custom, root_field, clavicle_field, head_field, neck_field, eye_field, jaw_field, l_field, r_field, c_field, metacarpus_field
     # Window -------------------------------------------------------------------------------------------
     if cmds.window ("mtxAutoRig", ex=1): cmds.deleteUI ("mtxAutoRig")
     window = cmds.window ("mtxAutoRig", t="Matrix Auto Rig v0.1", w=225, s=1)
@@ -414,7 +553,7 @@ def UI():
         marginHeight=10,
         parent=about_Frame,
     )
-    howtoText1 = cmds.text(l='1 - Set if quadriped', parent=howto_frame)
+    howtoText1 = cmds.text(l='1 - Set if quadriped (Not implemented yet)', parent=howto_frame)
     howtoText2 = cmds.text(l='2 - Set Number of arms/legs/spine controllers', parent=howto_frame)
     howtoText3 = cmds.text(l='3 - Generate Locators and place of character', parent=howto_frame)
     howtoText4 = cmds.text(l='4 - Set Naming options if wanted', parent=howto_frame)
@@ -465,6 +604,12 @@ def UI():
         parent=options_frame
     )
     
+    do_face_field = cmds.optionMenuGrp(
+         l="AutoRig face?", 
+         p=options_frame)
+    cmds.menuItem(label="No")
+    cmds.menuItem(label="Yes")
+    
     # ========================================================================================================
     # separator
     # ========================================================================================================
@@ -489,7 +634,7 @@ def UI():
         collapse=True,
         marginWidth=2,
         marginHeight=5,
-        parent=mainColumn,
+        parent=options_frame,
         labelAlign='center'
         )
     naming_column = cmds.columnLayout(adjustableColumn=True, parent=naming_options_frame, columnAlign='center')
@@ -505,11 +650,6 @@ def UI():
         )
     scroll_layout = cmds.scrollLayout(horizontalScrollBarThickness=0, verticalScrollBarThickness=16, height=300, parent=naming_custom_frame)
     custom_column = cmds.columnLayout(adjustableColumn=True, parent=scroll_layout, columnAlign='center')
-
-    # ========================================================================================================
-    # separator
-    # ========================================================================================================
-    sep_naming = cmds.separator(h=8, style='in', parent=mainColumn)
 
     # ========================================================================================================
     # 5) Generate rig button
@@ -884,7 +1024,7 @@ def toggle_custom_naming(*args):
     update_naming_example()
 
 def update_naming_example(*args):
-    global addCaps, addChrName
+    global addCaps, char_prefix
     try:
         addChrName = cmds.radioButtonGrp(option_chrName, q=True, select=True) == 1
     except:
@@ -905,11 +1045,17 @@ def update_naming_example(*args):
         prefix = cmds.textFieldGrp(char_name_field, q=True, text=True)
         prefix = prefix.strip() if prefix else "chr"
         char_prefix = prefix + "_"
-        
-    if addCaps:
-        example = f"CHR_L_GRPOFF_Hand_01_JNT"
+    
+    if addChrName:    
+        if addCaps:
+            example = f"CHR_L_GRPOFF_Hand_01_JNT"
+        else:
+            example = f"chr_l_grpOff_hand_01_jnt"
     else:
-        example = f"chr_l_grpOff_hand_01_jnt"
+        if addCaps:
+            example = f"L_GRPOFF_Hand_01_JNT"
+        else:
+            example = f"l_grpOff_hand_01_jnt"
 
     try:
         cmds.text(naming_example, e=True, label=f"Example: {example}")
